@@ -35,7 +35,7 @@ var strandFn = strand(function () {
   }
   // result == 45
 
-  yield result3 + 5;
+  yield result + 5;
 });
 
 // Call the strand with a completion callback.

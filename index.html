@@ -6,7 +6,7 @@
 
   <script type="application/javascript;version=1.7" src="strand.js"></script>
   <script type="application/javascript;version=1.7">
-    function make_async_work(str) {
+    function make_async_work_2(str) {
       return function (callback) {
         setTimeout(function () {
           callback(str);
@@ -28,16 +28,16 @@
     
     var error1 = strand(function() {
       console.log("1a");
-      yield make_async_work('1');
+      yield make_async_work_2('1');
       console.log("1b");
       throw "Boom";
     });
     
     var error2 = strand(function() {
       console.log("2a");
-      yield make_async_work('1');
+      yield make_async_work_2('1');
       console.log("2b");
-      yield make_async_work('2');
+      yield make_async_work_2('2');
       console.log("2c");
       throw "Boom";
     });
@@ -45,7 +45,7 @@
     var handleerror = strand(function() {
       try {
         console.log("a");
-        yield make_async_work('outer');
+        yield make_async_work_2('outer');
         console.log("b");
         yield error0;
         console.log("c");
@@ -78,7 +78,7 @@
     function inside_function() {
       var a, b;
       try {
-        [a] = yield make_async_work('inside 1');
+        [a] = yield make_async_work_2('inside 1');
       } catch (exc) {
         console.log("Caught Exception", exc);
         a = 'thank';
@@ -120,8 +120,42 @@
 
     //fnGen(27);
     
-    handleerror(27, function(){
-      console.log("All done!");
+    // handleerror(27, function(){
+    //   console.log("All done!");
+    // });
+
+    function make_async_work(a, b) {
+      return function (callback) {
+        setTimeout(function () {
+          callback(a + b);
+        }, 500);
+      };
+    }
+
+    var strandFn = strand(function () {
+      var result;
+
+      [result] = yield make_async_work(5, 10);
+      // result == 15
+
+      [result] = yield make_async_work(result, 20);
+      // result == 35
+
+      // Can perform work asynchronously inside a closure.
+      [result] = yield function(callback) {
+        setTimeout(function () {
+          callback(result + 10);
+        }, 500);
+      }
+      // result == 45
+
+      yield result + 5;
+    });
+
+    // Call the strand with a completion callback.
+    strandFn(function (return_value) {
+      // return_value == 50
+      console.log("Got result", return_value);
     });
   </script>
 
