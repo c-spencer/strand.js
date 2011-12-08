@@ -79,5 +79,5 @@ strandFn (return_value) ->
 
 ## Contributors
 
-Chris Spencer
+Chris Spencer  
 Grant Husbands
