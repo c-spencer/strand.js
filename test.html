@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Strand.js QUnit Testing</title>
+
+    <link href="http://code.jquery.com/qunit/qunit-git.css" rel="stylesheet">
+
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+    <script src="http://code.jquery.com/qunit/qunit-git.js"></script>
+    <script type="application/javascript;version=1.7" src="strand.js"></script>
+    <script type="application/javascript;version=1.7">
+      var TIMEOUT_DURATION = 10;
+
+      // Run a provided function asynchronously.
+      function run_async(fn) {
+        return function (callback) {
+          setTimeout(function () {
+            callback(fn())
+          }, TIMEOUT_DURATION);
+        }
+      }
+
+      $(function () {
+        asyncTest("basic test", function () {
+          
+          strand(function () {
+            var result;
+
+            [result] = yield run_async(function () { return 5 + 10; });
+            equal(result, 15);
+
+            [result] = yield run_async(function () { return result + 20; });
+            equal(result, 35);
+
+            [result] = yield function(callback) {
+              setTimeout(function () {
+                callback(result + 10);
+              }, TIMEOUT_DURATION);
+            }
+            equal(result, 45);
+
+            yield result + 5;
+          })(function (return_value) {
+            equal(return_value, 50);
+            start();
+          });
+
+        });
+
+        // yield_fn should throw.
+        var handler = strand(function (yield_fn) {
+          try {
+            ok(true, 'handler a');
+            yield run_async(function () {});
+            ok(true, 'handler b');
+            yield yield_fn;
+            ok(false, 'handler c');
+          } catch (e) {
+            equal(e, "Boom");
+          }
+        });
+
+        asyncTest("simple exceptions", function () {
+          expect(5);
+
+          var error0 = strand(function() {
+            ok(true, 'error0 a');
+            throw "Boom";
+            yield 1;
+          });
+
+          handler(error0, function () {
+            ok(true, 'handler finish');
+            start();
+          });
+        });
+
+        asyncTest("throw after yield", function () {
+          expect(6);
+
+          var error1 = strand(function () {
+            ok(true, 'error1 a');
+            yield run_async(function () {});
+            ok(true, 'error1 b');
+            throw "Boom";
+          });
+
+          handler(error1, function () {
+            ok(true, 'handler finish');
+            start();
+          });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <h1 id="qunit-header">Strand.js</h1>
+    <h2 id="qunit-banner"></h2>
+    <div id="qunit-testrunner-toolbar"></div>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests"></ol>
+    <div id="qunit-fixture">test markup, will be hidden</div>
+  </body>
+</html>
